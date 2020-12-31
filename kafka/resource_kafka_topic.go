@@ -106,7 +106,7 @@ func topicUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			d.Id(), err))
 	}
 
-	return diag.FromErr(err)
+	return nil
 }
 
 func topicRefreshFunc(client *LazyClient, topic string, expected Topic) resource.StateRefreshFunc {
