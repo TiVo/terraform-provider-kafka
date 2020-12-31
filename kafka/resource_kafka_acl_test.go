@@ -195,7 +195,7 @@ func cfg(extraCfg string) string {
 
 	return fmt.Sprintf(`
 provider "kafka" {
-   bootstrap_servers = ["localhost:9092"]
+    bootstrap_servers = ["localhost:9092"]
 		ca_cert = <<CA
 %s
 CA

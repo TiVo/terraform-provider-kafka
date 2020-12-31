@@ -82,7 +82,12 @@ func aclDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	c := meta.(*LazyClient)
 	a := aclInfo(d)
 	log.Printf("[INFO] Deleting ACL %s", a)
-	return diag.FromErr(c.DeleteACL(a))
+
+	err := c.DeleteACL(a)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	return nil
 }
 
 func aclRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

@@ -10,7 +10,7 @@ test:
 
 testacc:
 	GODEBUG=x509ignoreCN=0 \
-	TF_LOG=TRACE \
+	TF_LOG=DEBUG \
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 9m -count=1
 
 .PHONY: build test testacc
