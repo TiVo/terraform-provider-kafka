@@ -46,9 +46,18 @@ func AccTestProviderConfig() *terraform.ResourceConfig {
 		}
 	}
 
-	ca, _ := ioutil.ReadFile("../secrets/ca.crt")
-	cert, _ := ioutil.ReadFile("../secrets/terraform-cert.pem")
-	key, _ := ioutil.ReadFile("../secrets/terraform.pem")
+	ca, err := ioutil.ReadFile("../secrets/ca.crt")
+	if err != nil {
+		panic(err)
+	}
+	cert, err := ioutil.ReadFile("../secrets/terraform-cert.pem")
+	if err != nil {
+		panic(err)
+	}
+	key, err := ioutil.ReadFile("../secrets/terraform.pem")
+	if err != nil {
+		panic(err)
+	}
 
 	raw := map[string]interface{}{
 		"bootstrap_servers": bootstrapServers,
