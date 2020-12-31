@@ -15,6 +15,7 @@ func TestAcc_BasicTopic(t *testing.T) {
 		t.Fatal(err)
 	}
 	topicName := fmt.Sprintf("syslog-%s", u)
+
 	r.Test(t, r.TestCase{
 		Providers:    accProvider(),
 		PreCheck:     func() { testAccPreCheck(t) },
