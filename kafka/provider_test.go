@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform/terraform"
 )
 
 var testProvider *schema.Provider
 
 func TestProvider(t *testing.T) {
-	if err := Provider().(*schema.Provider).InternalValidate(); err != nil {
+	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
@@ -29,9 +29,9 @@ func testAccPreCheck(t *testing.T) {
 	}
 }
 
-func accProvider() map[string]terraform.ResourceProvider {
+func accProvider() map[string]*schema.Provider {
 	log.Println("[INFO] Setting up override for a provider")
-	provider := Provider().(*schema.Provider)
+	provider := Provider()
 
 	bs := strings.Split(os.Getenv("KAFKA_BOOTSTRAP_SERVER"), ",")
 	if len(bs) == 0 {
@@ -57,7 +57,7 @@ func accProvider() map[string]terraform.ResourceProvider {
 
 	testProvider = provider
 
-	return map[string]terraform.ResourceProvider{
+	return map[string]*schema.Provider{
 		"kafka": provider,
 	}
 }

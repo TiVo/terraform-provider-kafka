@@ -1,21 +1,14 @@
 package kafka
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-func positiveValue(val interface{}, key string) (warns []string, errs []error) {
-	v := val.(int)
-	if v < 1 {
-		errs = append(errs, fmt.Errorf("%q must be greater than 0, got: %d", key, v))
-	}
-	return
-}
 
 func kafkaTopicResource() *schema.Resource {
 	return &schema.Resource{
@@ -201,7 +194,7 @@ func topicRead(d *schema.ResourceData, meta interface{}) error {
 	return errSet.err
 }
 
-func customPartitionDiff(diff *schema.ResourceDiff, v interface{}) (err error) {
+func customPartitionDiff(ctx context.Context, diff *schema.ResourceDiff, v interface{}) (err error) {
 	log.Printf("[INFO] Checking the diff!")
 	if diff.HasChange("partitions") {
 		log.Printf("[INFO] Partitions have changed!")
@@ -216,4 +209,12 @@ func customPartitionDiff(diff *schema.ResourceDiff, v interface{}) (err error) {
 
 	}
 	return err
+}
+
+func positiveValue(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(int)
+	if v < 1 {
+		errs = append(errs, fmt.Errorf("%q must be greater than 0, got: %d", key, v))
+	}
+	return
 }

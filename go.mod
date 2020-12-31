@@ -5,8 +5,8 @@ go 1.12
 require (
 	github.com/Shopify/sarama v1.26.4
 	github.com/hashicorp/go-uuid v1.0.2
-	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/terraform-plugin-sdk v1.0.0
+	github.com/hashicorp/terraform v0.14.3
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.0.3
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c
 )
 
