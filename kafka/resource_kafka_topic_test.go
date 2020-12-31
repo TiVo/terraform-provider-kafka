@@ -21,7 +21,7 @@ func TestAcc_BasicTopic(t *testing.T) {
 		CheckDestroy: testAccCheckTopicDestroy,
 		Steps: []r.TestStep{
 			{
-				Config: fmt.Sprintf(testResourceTopic_noConfig, topicName),
+				Config: cfg(fmt.Sprintf(testResourceTopic_noConfig, topicName)),
 				Check:  testResourceTopic_noConfigCheck,
 			},
 		},
@@ -41,11 +41,11 @@ func TestAcc_TopicConfigUpdate(t *testing.T) {
 		CheckDestroy: testAccCheckTopicDestroy,
 		Steps: []r.TestStep{
 			{
-				Config: fmt.Sprintf(testResourceTopic_initialConfig, topicName),
+				Config: cfg(fmt.Sprintf(testResourceTopic_initialConfig, topicName)),
 				Check:  testResourceTopic_initialCheck,
 			},
 			{
-				Config: fmt.Sprintf(testResourceTopic_updateConfig, topicName),
+				Config: cfg(fmt.Sprintf(testResourceTopic_updateConfig, topicName)),
 				Check:  testResourceTopic_updateCheck,
 			},
 		},
@@ -92,11 +92,11 @@ func TestAcc_TopicUpdatePartitions(t *testing.T) {
 		CheckDestroy: testAccCheckTopicDestroy,
 		Steps: []r.TestStep{
 			{
-				Config: fmt.Sprintf(testResourceTopic_initialConfig, topicName),
+				Config: cfg(fmt.Sprintf(testResourceTopic_initialConfig, topicName)),
 				Check:  testResourceTopic_initialCheck,
 			},
 			{
-				Config: fmt.Sprintf(testResourceTopic_updatePartitions, topicName),
+				Config: cfg(fmt.Sprintf(testResourceTopic_updatePartitions, topicName)),
 				Check:  testResourceTopic_updatePartitionsCheck,
 			},
 		},
@@ -221,10 +221,6 @@ func testResourceTopic_updatePartitionsCheck(s *terraform.State) error {
 
 //lintignore:AT004
 const testResourceTopic_noConfig = `
-provider "kafka" {
-  bootstrap_servers = ["localhost:9092"]
-}
-
 resource "kafka_topic" "test" {
   name               = "%s"
   replication_factor = 1
@@ -234,10 +230,6 @@ resource "kafka_topic" "test" {
 
 //lintignore:AT004
 const testResourceTopic_initialConfig = `
-provider "kafka" {
-  bootstrap_servers = ["localhost:9092"]
-}
-
 resource "kafka_topic" "test" {
   name               = "%s"
   replication_factor = 1
@@ -252,10 +244,6 @@ resource "kafka_topic" "test" {
 
 //lintignore:AT004
 const testResourceTopic_updateConfig = `
-provider "kafka" {
-  bootstrap_servers = ["localhost:9092"]
-}
-
 resource "kafka_topic" "test" {
   name               = "%s"
   replication_factor = 1

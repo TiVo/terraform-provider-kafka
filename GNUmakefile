@@ -9,14 +9,8 @@ test:
 	 go test ./...
 
 testacc:
-	KAFKA_BOOTSTRAP_SERVER=localhost:9092 \
-	KAFKA_CA_CERT=../secrets/ca.crt \
-	KAFKA_CLIENT_CERT=../secrets/terraform-cert.pem \
-	KAFKA_CLIENT_KEY=../secrets/terraform-with-passphrase.pem \
-	KAFKA_CLIENT_KEY_PASSPHRASE=confluent \
-	KAFKA_SKIP_VERIFY=false \
-	KAFKA_ENABLE_TLS=true \
-	TF_LOG=DEBUG \
+	GODEBUG=x509ignoreCN=0 \
+	TF_LOG=TRACE \
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 9m -count=1
 
 .PHONY: build test testacc

@@ -13,7 +13,7 @@ func kafkaACLResource() *schema.Resource {
 		Read:   aclRead,
 		Delete: aclDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
 		MigrateState:  migrateKafkaAclState,
@@ -132,9 +132,9 @@ func aclRead(d *schema.ResourceData, meta interface{}) error {
 				errSet := errSetter{d: d}
 				errSet.Set("acl_principal", acl.Principal)
 				errSet.Set("acl_host", acl.Host)
-				errSet.Set("acl_operation", acl.Operation)
-				errSet.Set("acl_permission_type", acl.PermissionType)
-				errSet.Set("resource_pattern_type_filter", foundACLs.ResourcePatternType)
+				errSet.Set("acl_operation", ACLOperationToString(acl.Operation))
+				errSet.Set("acl_permission_type", ACLPermissionTypeToString(acl.PermissionType))
+				errSet.Set("resource_pattern_type_filter", resourcePatternToString(foundACLs.ResourcePatternType))
 				if errSet.err != nil {
 					return err
 				}

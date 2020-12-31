@@ -27,7 +27,11 @@ func NewClient(config *Config) (*Client, error) {
 		return nil, errors.New("Cannot create client without kafka config")
 	}
 
-	log.Printf("[INFO] configuring bootstrap_servers %v", config.copyWithMaskedSensitiveValues())
+	log.Printf("[TRACE] configuring bootstrap_servers %v", config.copyWithMaskedSensitiveValues())
+	if config.BootstrapServers == nil {
+		return nil, fmt.Errorf("No bootstrap_servers provided")
+	}
+
 	bootstrapServers := *(config.BootstrapServers)
 	if bootstrapServers == nil {
 		return nil, fmt.Errorf("No bootstrap_servers provided")
@@ -65,7 +69,7 @@ func (c *Client) SaramaClient() sarama.Client {
 }
 
 func (c *Client) populateAPIVersions() error {
-	log.Printf("[DEBUG] retrieving supported APIs from broker: %s", c.config.BootstrapServers)
+	log.Printf("[TRACE] retrieving supported APIs from broker: %s", c.config.BootstrapServers)
 	broker, err := c.client.Controller()
 	if err != nil {
 		log.Printf("[ERROR] Unable to populate supported API versions. Error retrieving controller: %s", err)
@@ -229,7 +233,7 @@ func (client *Client) ReadTopic(name string) (Topic, error) {
 
 	log.Printf("[INFO] There are %d topics", len(topics))
 	for _, t := range topics {
-		log.Printf("[TRACE] [%s] Reading Topicfrom Kafka", t)
+		log.Printf("[TRACE] [%s] Reading topic from Kafka", t)
 		if name == t {
 			log.Printf("[DEBUG] Found %s from Kafka", name)
 			p, err := c.Partitions(t)

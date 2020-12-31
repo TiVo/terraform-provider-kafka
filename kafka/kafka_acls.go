@@ -101,6 +101,7 @@ func tfToAclFilter(s StringlyTypedACL) (sarama.AclFilter, error) {
 	return f, nil
 }
 
+
 func stringToACLPrefix(s string) sarama.AclResourcePatternType {
 	switch s {
 	case "Any":
@@ -113,6 +114,20 @@ func stringToACLPrefix(s string) sarama.AclResourcePatternType {
 		return sarama.AclPatternPrefixed
 	}
 	return unknownConversion
+}
+
+func resourcePatternToString(p sarama.AclResourcePatternType) string {
+	switch p {
+	case sarama.AclPatternAny:
+		return "Any"
+	case sarama.AclPatternMatch:
+		return "Match"
+	case sarama.AclPatternLiteral:
+		return "Literal"
+	case sarama.AclPatternPrefixed:
+		return "Prefixed"
+	}
+	return "unknownConversion"
 }
 
 func (c *Client) DeleteACL(s StringlyTypedACL) error {
