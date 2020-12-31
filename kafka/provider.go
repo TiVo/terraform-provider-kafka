@@ -110,7 +110,7 @@ func Provider() *schema.Provider {
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	brokers := dTos("bootstrap_servers", d)
 
-	log.Printf("[DEBUG] configuring provider with Brokers @ %v", brokers)
+	log.Printf("[TRACE] configuring provider with brokers @ %v", brokers)
 
 	saslMechanism := d.Get("sasl_mechanism").(string)
 	switch saslMechanism {
