@@ -127,10 +127,6 @@ func testResourceACL_updateCheck(s *terraform.State) error {
 		}
 	}
 
-	//if acl.ResourceName != "syslog" {
-	//return fmt.Errorf("The expected ACL should be for syslog")
-	//}
-
 	if len(acl.Acls) != 1 {
 		return fmt.Errorf("There are %d ACLs when there should be 1: %v", len(acl.Acls), acl.Acls)
 	}
