@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"fmt"
+	"log"
 	"testing"
 
 	uuid "github.com/hashicorp/go-uuid"
@@ -54,27 +55,21 @@ func TestAcc_TopicConfigUpdate(t *testing.T) {
 }
 
 func testAccCheckTopicDestroy(s *terraform.State) error {
-	resourceState := s.Modules[0].Resources["kafka_topic.test"]
-	if resourceState == nil {
-		return fmt.Errorf("resource not found in state")
-	}
-
-	instanceState := resourceState.Primary
-	if instanceState == nil {
-		return fmt.Errorf("resource has no primary instance")
-	}
-
-	name := instanceState.ID
-
-	if name != instanceState.Attributes["name"] {
-		return fmt.Errorf("id doesn't match name")
-	}
-
+	log.Printf("[INFO] PleaVeriyfing ")
 	client := testProvider.Meta().(*LazyClient)
-	_, err := client.ReadTopic(name)
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "kafka_topic" {
+			continue
+		}
 
-	if _, ok := err.(TopicMissingError); !ok {
-		return err
+		name := rs.Primary.ID
+		log.Printf("[INFO] PleaVeriyfing2, %s", name)
+
+		_, err := client.ReadTopic(name)
+		log.Printf("[INFO] Veriyfing %s has been deleted: %v", name, err)
+		if _, ok := err.(TopicMissingError); !ok {
+			return err
+		}
 	}
 
 	return nil
