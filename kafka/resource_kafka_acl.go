@@ -1,17 +1,19 @@
 package kafka
 
 import (
+	"context"
 	"log"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func kafkaACLResource() *schema.Resource {
 	//lintignore:R011
 	return &schema.Resource{
-		Create: aclCreate,
-		Read:   aclRead,
-		Delete: aclDelete,
+		CreateContext: aclCreate,
+		ReadContext:   aclRead,
+		DeleteContext: aclDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -59,7 +61,7 @@ func kafkaACLResource() *schema.Resource {
 	}
 }
 
-func aclCreate(d *schema.ResourceData, meta interface{}) error {
+func aclCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*LazyClient)
 	a := aclInfo(d)
 
@@ -68,7 +70,7 @@ func aclCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if err != nil {
 		log.Println("[ERROR] Failed to create ACL")
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(a.String())
@@ -76,14 +78,14 @@ func aclCreate(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func aclDelete(d *schema.ResourceData, meta interface{}) error {
+func aclDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*LazyClient)
 	a := aclInfo(d)
 	log.Printf("[INFO] Deleting ACL %s", a)
-	return c.DeleteACL(a)
+	return diag.FromErr(c.DeleteACL(a))
 }
 
-func aclRead(d *schema.ResourceData, meta interface{}) error {
+func aclRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Println("[INFO] Reading ACL")
 	c := meta.(*LazyClient)
 	a := aclInfo(d)
@@ -91,7 +93,7 @@ func aclRead(d *schema.ResourceData, meta interface{}) error {
 
 	currentACLs, err := c.ListACLs()
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	aclNotFound := true
@@ -136,7 +138,7 @@ func aclRead(d *schema.ResourceData, meta interface{}) error {
 				errSet.Set("acl_permission_type", ACLPermissionTypeToString(acl.PermissionType))
 				errSet.Set("resource_pattern_type_filter", resourcePatternToString(foundACLs.ResourcePatternType))
 				if errSet.err != nil {
-					return err
+					return diag.FromErr(err)
 				}
 			}
 		}

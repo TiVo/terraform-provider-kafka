@@ -144,7 +144,7 @@ func topicDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		PollInterval: 2 * time.Second,
 		MinTimeout:   20 * time.Second,
 	}
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("Error waiting for topic (%s) to delete: %s", d.Id(), err))
 	}
