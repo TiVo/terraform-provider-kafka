@@ -35,7 +35,7 @@ func testAccPreCheck(t *testing.T) {
 func AccTestProviderConfig() *terraform.ResourceConfig {
 	wat := os.Getenv("KAFKA_BOOTSTRAP_SERVERS")
 	bs := strings.Split(wat, ",")
-	if len(bs) == 0 {
+	if len(bs) == 0 || wat != "" {
 		bs = []string{"localhost:9092"}
 	}
 
