@@ -26,9 +26,6 @@ func TestAcc_ACLCreateAndUpdate(t *testing.T) {
 				return datProvider(), nil
 			},
 		},
-		Stuff: map[string]string{
-			"kafka": "a = \"b\"",
-		},
 		PreCheck:     func() { testAccPreCheck(t) },
 		CheckDestroy: testAccCheckAclDestroy,
 		Steps: []r.TestStep{
