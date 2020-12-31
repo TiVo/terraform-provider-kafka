@@ -151,10 +151,6 @@ func testResourceTopic_initialCheck(s *terraform.State) error {
 		return fmt.Errorf("id doesn't match name")
 	}
 
-	//if name != "syslog" {
-	//return fmt.Errorf("unexpected topic name %s", name)
-	//}
-
 	client := testProvider.Meta().(*LazyClient)
 	topic, err := client.ReadTopic(name)
 	if err != nil {
@@ -164,6 +160,7 @@ func testResourceTopic_initialCheck(s *terraform.State) error {
 	if v, ok := topic.Config["retention.ms"]; ok && *v != "11111" {
 		return fmt.Errorf("retention.ms did not get set got: %v", topic.Config)
 	}
+
 	if v, ok := topic.Config["segment.ms"]; ok && *v != "22222" {
 		return fmt.Errorf("segment.ms !=  %v", topic)
 	}
@@ -204,6 +201,7 @@ func testResourceTopic_updatePartitionsCheck(s *terraform.State) error {
 	resourceState := s.Modules[0].Resources["kafka_topic.test"]
 	instanceState := resourceState.Primary
 	client := testProvider.Meta().(*LazyClient)
+
 	name := instanceState.ID
 	topic, err := client.ReadTopic(name)
 	if err != nil {
