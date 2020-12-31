@@ -15,4 +15,3 @@ replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110
 
 replace github.com/hashicorp/terraform-plugin-test/v2 => github.com/Mongey/terraform-plugin-test/v2 v2.1.3-0.20201231030340-31624e2320cd
 
-replace github.com/hashicorp/terraform-plugin-sdk/v2 => ../../hashicorp/terraform-plugin-sdk
