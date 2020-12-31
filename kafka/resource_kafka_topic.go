@@ -135,6 +135,7 @@ func topicDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.FromErr(err)
 	}
 
+	log.Printf("[DEBUG] waiting for topic to delete? %s", t.Name)
 	stateConf := &resource.StateChangeConf{
 		Pending:      []string{"Pending"},
 		Target:       []string{"Deleted"},
@@ -149,6 +150,7 @@ func topicDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.FromErr(fmt.Errorf("Error waiting for topic (%s) to delete: %s", d.Id(), err))
 	}
 
+	log.Printf("[DEBUG] deletetopic done! %s", t.Name)
 	d.SetId("")
 	return nil
 }
@@ -157,6 +159,7 @@ func topicDeleteFunc(client *LazyClient, id string, t Topic) resource.StateRefre
 	return func() (result interface{}, s string, err error) {
 		topic, err := client.ReadTopic(t.Name)
 
+		log.Printf("[DEBUG] deletetopic read %s, %v", t.Name, err)
 		if err != nil {
 			_, ok := err.(TopicMissingError)
 			if ok {

@@ -43,17 +43,17 @@ func TestAcc_ACLCreateAndUpdate(t *testing.T) {
 
 func testAccCheckAclDestroy(s *terraform.State) error {
 	client := testProvider.Meta().(*LazyClient)
-	_, err := client.ListACLs()
+	acls, err := client.ListACLs()
 	if err != nil {
 		return err
 	}
 
-	//if len(acls) > 1 {
-	//	return fmt.Errorf("There should be one ACL, got [%d]: %v %s",
-	//		len(acls),
-	//		acls,
-	//		err)
-	//}
+	if len(acls) > 1 {
+		return fmt.Errorf("There should be one ACL, got [%d]: %v %s",
+			len(acls),
+			acls,
+			err)
+	}
 
 	return nil
 }
@@ -98,6 +98,7 @@ func testResourceACL_initialCheck(s *terraform.State) error {
 	if acl.Resource.ResourcePatternType != sarama.AclPatternLiteral {
 		return fmt.Errorf("Should be Literal, not %v", acl.Resource.ResourcePatternType)
 	}
+	log.Printf("[INFO] success")
 	return nil
 }
 
@@ -175,7 +176,6 @@ resource "kafka_acl" "test" {
 }
 `
 
-//lintignore:AT004
 const testResourceACL_updateConfig = `
 resource "kafka_acl" "test" {
 	resource_name                = "%s"
@@ -188,6 +188,7 @@ resource "kafka_acl" "test" {
 }
 `
 
+//lintignore:AT004
 func cfg(extraCfg string) string {
 	ca, _ := ioutil.ReadFile("../secrets/ca.crt")
 	cert, _ := ioutil.ReadFile("../secrets/terraform-cert.pem")

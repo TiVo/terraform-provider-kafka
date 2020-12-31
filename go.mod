@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/Shopify/sarama v1.26.4
+	github.com/bflad/tfproviderlint v0.21.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2
 	github.com/hashicorp/hcl/v2 v2.8.1 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.0.3
