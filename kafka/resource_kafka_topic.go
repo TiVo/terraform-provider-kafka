@@ -166,7 +166,6 @@ func topicDeleteFunc(client *LazyClient, id string, t Topic) resource.StateRefre
 		}
 		return topic, "Pending", nil
 	}
-
 }
 
 func topicRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -205,7 +204,7 @@ func customPartitionDiff(ctx context.Context, diff *schema.ResourceDiff, v inter
 		o, n := diff.GetChange("partitions")
 		oi := o.(int)
 		ni := n.(int)
-		log.Printf("Partitions is changing from %d to %d", oi, ni)
+		log.Printf("[INFO] Partitions is changing from %d to %d", oi, ni)
 		if ni < oi {
 			log.Printf("Partitions decreased from %d to %d. Forcing new resource", oi, ni)
 			err = diff.ForceNew("partitions")

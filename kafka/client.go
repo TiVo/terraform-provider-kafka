@@ -155,7 +155,8 @@ func (c *Client) CreateTopic(t Topic) error {
 	}
 
 	timeout := time.Duration(c.config.Timeout) * time.Second
-	log.Printf("[DEBUG] Timeout is %v ", timeout)
+	log.Printf("[TRACE] Timeout is %v ", timeout)
+
 	req := &sarama.CreateTopicsRequest{
 		TopicDetails: map[string]*sarama.TopicDetail{
 			t.Name: {
