@@ -6,16 +6,17 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func kafkaTopicResource() *schema.Resource {
 	return &schema.Resource{
-		Create: topicCreate,
-		Read:   topicRead,
-		Update: topicUpdate,
-		Delete: topicDelete,
+		CreateContext: topicCreate,
+		ReadContext:   topicRead,
+		UpdateContext: topicUpdate,
+		DeleteContext: topicDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
@@ -51,26 +52,26 @@ func kafkaTopicResource() *schema.Resource {
 	}
 }
 
-func topicCreate(d *schema.ResourceData, meta interface{}) error {
+func topicCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*LazyClient)
 	t := metaToTopic(d, meta)
 
 	err := c.CreateTopic(t)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(t.Name)
 	return nil
 }
 
-func topicUpdate(d *schema.ResourceData, meta interface{}) error {
+func topicUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*LazyClient)
 	t := metaToTopic(d, meta)
 
 	err := c.UpdateTopic(t)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	if d.HasChange("partitions") {
 		// update should only be called when we're increasing partitions
@@ -79,9 +80,10 @@ func topicUpdate(d *schema.ResourceData, meta interface{}) error {
 		newPartitions := ni.(int)
 		log.Printf("[INFO] Updating partitions from %d to %d", oldPartitions, newPartitions)
 		t.Partitions = int32(newPartitions)
+
 		err = c.AddPartitions(t)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -96,15 +98,15 @@ func topicUpdate(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout:   2 * time.Second,
 	}
 
-	_, err = stateConf.WaitForState()
+	_, err = stateConf.WaitForStateContext(ctx)
 
 	if err != nil {
-		return fmt.Errorf(
+		return diag.FromErr(fmt.Errorf(
 			"Error waiting for topic (%s) to become ready: %s",
-			d.Id(), err)
+			d.Id(), err))
 	}
 
-	return err
+	return diag.FromErr(err)
 }
 
 func topicRefreshFunc(client *LazyClient, topic string, expected Topic) resource.StateRefreshFunc {
@@ -124,13 +126,13 @@ func topicRefreshFunc(client *LazyClient, topic string, expected Topic) resource
 	}
 }
 
-func topicDelete(d *schema.ResourceData, meta interface{}) error {
+func topicDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*LazyClient)
 	t := metaToTopic(d, meta)
 
 	err := c.DeleteTopic(t.Name)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	stateConf := &resource.StateChangeConf{
@@ -143,13 +145,12 @@ func topicDelete(d *schema.ResourceData, meta interface{}) error {
 		MinTimeout:   20 * time.Second,
 	}
 	_, err = stateConf.WaitForState()
-
 	if err != nil {
-		return fmt.Errorf("Error waiting for topic (%s) to delete: %s", d.Id(), err)
+		return diag.FromErr(fmt.Errorf("Error waiting for topic (%s) to delete: %s", d.Id(), err))
 	}
 
 	d.SetId("")
-	return err
+	return nil
 }
 
 func topicDeleteFunc(client *LazyClient, id string, t Topic) resource.StateRefreshFunc {
@@ -168,7 +169,7 @@ func topicDeleteFunc(client *LazyClient, id string, t Topic) resource.StateRefre
 
 }
 
-func topicRead(d *schema.ResourceData, meta interface{}) error {
+func topicRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Id()
 	client := meta.(*LazyClient)
 	topic, err := client.ReadTopic(name)
@@ -181,7 +182,7 @@ func topicRead(d *schema.ResourceData, meta interface{}) error {
 			return nil
 		}
 
-		return err
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] Setting the state from Kafka %v", topic)
@@ -191,7 +192,10 @@ func topicRead(d *schema.ResourceData, meta interface{}) error {
 	errSet.Set("replication_factor", topic.ReplicationFactor)
 	errSet.Set("config", topic.Config)
 
-	return errSet.err
+	if errSet.err != nil {
+		return diag.FromErr(errSet.err)
+	}
+	return nil
 }
 
 func customPartitionDiff(ctx context.Context, diff *schema.ResourceDiff, v interface{}) (err error) {
