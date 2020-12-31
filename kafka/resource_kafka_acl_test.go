@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"testing"
 
@@ -18,6 +19,10 @@ func TestAcc_ACLCreateAndUpdate(t *testing.T) {
 	}
 	aclResourceName := fmt.Sprintf("syslog-%s", u)
 
+	ca, _ := ioutil.ReadFile("../secrets/ca.crt")
+	cert, _ := ioutil.ReadFile("../secrets/terraform-cert.pem")
+	key, _ := ioutil.ReadFile("../secrets/terraform.pem")
+
 	r.Test(t, r.TestCase{
 		Providers:    accProvider(),
 		IsUnitTest:   false,
@@ -25,11 +30,15 @@ func TestAcc_ACLCreateAndUpdate(t *testing.T) {
 		CheckDestroy: testAccCheckAclDestroy,
 		Steps: []r.TestStep{
 			{
-				Config: fmt.Sprintf(testResourceACL_initialConfig, aclResourceName),
+				Config: fmt.Sprintf(testResourceACL_initialConfig,
+					ca, cert, key,
+					aclResourceName),
 				Check:  testResourceACL_initialCheck,
 			},
 			{
-				Config: fmt.Sprintf(testResourceACL_updateConfig, aclResourceName),
+				Config: fmt.Sprintf(testResourceACL_updateConfig,
+					ca, cert, key,
+					aclResourceName),
 				Check:  testResourceACL_updateCheck,
 			},
 		},
@@ -68,7 +77,7 @@ func testResourceACL_initialCheck(s *terraform.State) error {
 	}
 
 	if len(acls) < 1 {
-		return fmt.Errorf("There should be one acls %v %s", acls, err)
+		return fmt.Errorf("There should be one acl %v %s", acls, err)
 	}
 
 	name := instanceState.Attributes["resource_name"]
@@ -157,10 +166,16 @@ func testResourceACL_updateCheck(s *terraform.State) error {
 //lintignore:AT004
 const testResourceACL_initialConfig = `
 provider "kafka" {
-  bootstrap_servers = ["localhost:9092"]
-	ca_cert           = file("../secrets/ca.crt")
-	client_cert       = file("../secrets/terraform-cert.pem")
-	client_key        = file("../secrets/terraform.pem")
+	bootstrap_servers = ["localhost:9092"]
+	ca_cert           = <<HERE
+%s
+HERE
+	client_cert       = <<HERE
+%s
+HERE
+	client_key        = <<HERE
+%s
+HERE
 }
 
 resource "kafka_acl" "test" {
@@ -178,9 +193,15 @@ resource "kafka_acl" "test" {
 const testResourceACL_updateConfig = `
 provider "kafka" {
 	bootstrap_servers = ["localhost:9092"]
-	ca_cert           = file("../secrets/ca.crt")
-	client_cert       = file("../secrets/terraform-cert.pem")
-	client_key        = file("../secrets/terraform.pem")
+	ca_cert           = <<HERE
+%s
+HERE
+	client_cert       = <<HERE
+%s
+HERE
+	client_key        = <<HERE
+%s
+HERE
 }
 
 resource "kafka_acl" "test" {
