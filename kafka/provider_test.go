@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
 )
 
 var testProvider *schema.Provider
@@ -46,16 +45,16 @@ func accProvider() map[string]*schema.Provider {
 		}
 	}
 
-	raw := map[string]interface{}{
-		"bootstrap_servers": bootstrapServers,
-	}
+	//raw := map[string]interface{}{
+	//"bootstrap_servers": bootstrapServers,
+	//}
 
-	err := provider.Configure(terraform.NewResourceConfigRaw(raw))
-	if err != nil {
-		log.Printf("[ERROR] Could not configure provider %v", err)
-	}
+	//err := provider.Configure(context.Background(), terraform.NewResourceConfigRaw(raw))
+	//if err != nil {
+	//log.Printf("[ERROR] Could not configure provider %v", err)
+	//}
 
-	testProvider = provider
+	//testProvider = provider
 
 	return map[string]*schema.Provider{
 		"kafka": provider,
