@@ -6,7 +6,7 @@ build:
 	go build .
 
 test:
-	 go test ./...
+	 go test $(TEST) -v $(TESTARGS)
 
 testacc:
 	GODEBUG=x509ignoreCN=0 \

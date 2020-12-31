@@ -19,12 +19,6 @@ jobs:
         run: |
           go install github.com/jstemmer/go-junit-report
           make test | go-junit-report > unit-test-results.xml
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v1
-        with:
-          name: unit-test-results.xml
-          path: unit-test-results.xml
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v1
         if: always()
@@ -58,7 +52,6 @@ jobs:
 
   acctest:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -78,16 +71,10 @@ jobs:
         run: |
           go install github.com/jstemmer/go-junit-report
           make testacc | go-junit-report > acc-test-results.xml
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v1
-        with:
-          name: acc-test-results.xml
-          path: acc-test-results.xml
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v1
         if: always()
         with:
-          check_name: "Acceptence Tests"
+          check_name: "Acceptance Tests"
           report_paths: acc-test-results.xml
           github_token: ${{ secrets.GITHUB_TOKEN }}
