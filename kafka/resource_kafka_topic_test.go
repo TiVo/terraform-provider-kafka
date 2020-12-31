@@ -270,10 +270,6 @@ resource "kafka_topic" "test" {
 
 //lintignore:AT004
 const testResourceTopic_updatePartitions = `
-provider "kafka" {
-  bootstrap_servers = ["localhost:9092"]
-}
-
 resource "kafka_topic" "test" {
   name               = "%s"
   replication_factor = 1
