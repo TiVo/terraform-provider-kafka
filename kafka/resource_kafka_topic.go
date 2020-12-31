@@ -18,7 +18,7 @@ func kafkaTopicResource() *schema.Resource {
 		UpdateContext: topicUpdate,
 		DeleteContext: topicDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		CustomizeDiff: customPartitionDiff,
 		Schema: map[string]*schema.Schema{
