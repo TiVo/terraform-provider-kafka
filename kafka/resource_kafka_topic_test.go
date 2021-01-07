@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"fmt"
-	"log"
 	"testing"
 
 	uuid "github.com/hashicorp/go-uuid"
@@ -79,7 +78,6 @@ func TestAcc_TopicUpdatePartitions(t *testing.T) {
 }
 
 func testAccCheckTopicDestroy(s *terraform.State) error {
-	log.Printf("[INFO] PleaVeriyfing ")
 	client := testProvider.Meta().(*LazyClient)
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "kafka_topic" {
@@ -87,10 +85,7 @@ func testAccCheckTopicDestroy(s *terraform.State) error {
 		}
 
 		name := rs.Primary.ID
-		log.Printf("[INFO] PleaVeriyfing2, %s", name)
-
 		_, err := client.ReadTopic(name)
-		log.Printf("[INFO] Veriyfing %s has been deleted: %v", name, err)
 		if _, ok := err.(TopicMissingError); !ok {
 			return err
 		}
@@ -142,7 +137,6 @@ func testResourceTopic_initialCheck(s *terraform.State) error {
 	}
 
 	name := instanceState.ID
-
 	if name != instanceState.Attributes["name"] {
 		return fmt.Errorf("id doesn't match name")
 	}
