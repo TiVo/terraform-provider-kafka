@@ -30,11 +30,11 @@ func TestAcc_ACLCreateAndUpdate(t *testing.T) {
 		CheckDestroy: testAccCheckAclDestroy,
 		Steps: []r.TestStep{
 			{
-				Config: cfg(fmt.Sprintf(testResourceACL_initialConfig, aclResourceName)),
+				Config: cfg(t, fmt.Sprintf(testResourceACL_initialConfig, aclResourceName)),
 				Check:  testResourceACL_initialCheck,
 			},
 			{
-				Config: cfg(fmt.Sprintf(testResourceACL_updateConfig, aclResourceName)),
+				Config: cfg(t, fmt.Sprintf(testResourceACL_updateConfig, aclResourceName)),
 				Check:  testResourceACL_updateCheck,
 			},
 			{
@@ -194,25 +194,36 @@ resource "kafka_acl" "test" {
 `
 
 //lintignore:AT004
-func cfg(extraCfg string) string {
-	ca, _ := ioutil.ReadFile("../secrets/ca.crt")
-	cert, _ := ioutil.ReadFile("../secrets/terraform-cert.pem")
-	key, _ := ioutil.ReadFile("../secrets/terraform.pem")
+func cfg(t *testing.T, extraCfg string) string {
+	ca, err := ioutil.ReadFile("../secrets/ca.crt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cert, err := ioutil.ReadFile("../secrets/terraform-cert.pem")
+	if err != nil {
+		t.Fatal(err)
+	}
+	key, err := ioutil.ReadFile("../secrets/terraform.pem")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	return fmt.Sprintf(`
 provider "kafka" {
-    bootstrap_servers = ["localhost:9092"]
-		ca_cert = <<CA
+	bootstrap_servers = ["localhost:9092"]
+	ca_cert = <<CA
 %s
 CA
-		client_cert = <<CERT
+	client_cert = <<CERT
 %s
 CERT
-		client_key= <<KEY
+	client_key= <<KEY
 %s
 KEY
- }
 
- %s
- `, ca, cert, key, extraCfg)
+}
+
+%s
+
+`, ca, cert, key, extraCfg)
 }

@@ -23,7 +23,7 @@ func TestAcc_BasicTopic(t *testing.T) {
 		CheckDestroy: testAccCheckTopicDestroy,
 		Steps: []r.TestStep{
 			{
-				Config: cfg(fmt.Sprintf(testResourceTopic_noConfig, topicName)),
+				Config: cfg(t, fmt.Sprintf(testResourceTopic_noConfig, topicName)),
 				Check:  testResourceTopic_noConfigCheck,
 			},
 		},
@@ -43,12 +43,36 @@ func TestAcc_TopicConfigUpdate(t *testing.T) {
 		CheckDestroy: testAccCheckTopicDestroy,
 		Steps: []r.TestStep{
 			{
-				Config: cfg(fmt.Sprintf(testResourceTopic_initialConfig, topicName)),
+				Config: cfg(t, fmt.Sprintf(testResourceTopic_initialConfig, topicName)),
 				Check:  testResourceTopic_initialCheck,
 			},
 			{
-				Config: cfg(fmt.Sprintf(testResourceTopic_updateConfig, topicName)),
+				Config: cfg(t, fmt.Sprintf(testResourceTopic_updateConfig, topicName)),
 				Check:  testResourceTopic_updateCheck,
+			},
+		},
+	})
+}
+
+func TestAcc_TopicUpdatePartitions(t *testing.T) {
+	u, err := uuid.GenerateUUID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	topicName := fmt.Sprintf("syslog-%s", u)
+
+	r.Test(t, r.TestCase{
+		Providers:    accProvider(),
+		PreCheck:     func() { testAccPreCheck(t) },
+		CheckDestroy: testAccCheckTopicDestroy,
+		Steps: []r.TestStep{
+			{
+				Config: cfg(t, fmt.Sprintf(testResourceTopic_initialConfig, topicName)),
+				Check:  testResourceTopic_initialCheck,
+			},
+			{
+				Config: cfg(t, fmt.Sprintf(testResourceTopic_updatePartitions, topicName)),
+				Check:  testResourceTopic_updatePartitionsCheck,
 			},
 		},
 	})
@@ -73,30 +97,6 @@ func testAccCheckTopicDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func TestAcc_TopicUpdatePartitions(t *testing.T) {
-	u, err := uuid.GenerateUUID()
-	if err != nil {
-		t.Fatal(err)
-	}
-	topicName := fmt.Sprintf("syslog-%s", u)
-
-	r.Test(t, r.TestCase{
-		Providers:    accProvider(),
-		PreCheck:     func() { testAccPreCheck(t) },
-		CheckDestroy: testAccCheckTopicDestroy,
-		Steps: []r.TestStep{
-			{
-				Config: cfg(fmt.Sprintf(testResourceTopic_initialConfig, topicName)),
-				Check:  testResourceTopic_initialCheck,
-			},
-			{
-				Config: cfg(fmt.Sprintf(testResourceTopic_updatePartitions, topicName)),
-				Check:  testResourceTopic_updatePartitionsCheck,
-			},
-		},
-	})
 }
 
 func testResourceTopic_noConfigCheck(s *terraform.State) error {
