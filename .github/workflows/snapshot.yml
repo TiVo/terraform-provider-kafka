@@ -1,9 +1,9 @@
 name: Build Snapshots
 
 on:
+  pull_request:
   push:
-    branches:
-      - '**'
+    branches: [ $default-branch ]
 
 jobs:
   goreleaser:
