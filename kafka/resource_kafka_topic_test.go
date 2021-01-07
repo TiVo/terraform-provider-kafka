@@ -16,7 +16,7 @@ func TestAcc_BasicTopic(t *testing.T) {
 	}
 	topicName := fmt.Sprintf("syslog-%s", u)
 
-	r.Test(t, r.TestCase{
+	r.ParallelTest(t, r.TestCase{
 		Providers:    accProvider(),
 		PreCheck:     func() { testAccPreCheck(t) },
 		CheckDestroy: testAccCheckTopicDestroy,
@@ -36,7 +36,7 @@ func TestAcc_TopicConfigUpdate(t *testing.T) {
 	}
 	topicName := fmt.Sprintf("syslog-%s", u)
 
-	r.Test(t, r.TestCase{
+	r.ParallelTest(t, r.TestCase{
 		Providers:    accProvider(),
 		PreCheck:     func() { testAccPreCheck(t) },
 		CheckDestroy: testAccCheckTopicDestroy,

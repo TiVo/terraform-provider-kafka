@@ -20,7 +20,8 @@ func TestAcc_ACLCreateAndUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	aclResourceName := fmt.Sprintf("syslog-%s", u)
-	r.Test(t, r.TestCase{
+
+	r.ParallelTest(t, r.TestCase{
 		ProviderFactories: map[string]func() (*schema.Provider, error){
 			"kafka": func() (*schema.Provider, error) {
 				return datProvider(), nil
