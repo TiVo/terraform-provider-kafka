@@ -27,18 +27,6 @@ jobs:
           report_paths: unit-test-results.xml
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-  lint:
-    name: "tf-provider-lint"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: bflad/tfproviderlint-github-action@master
-        with:
-          args: -version
-      - uses: bflad/tfproviderlint-github-action@master
-        with:
-          args: ./...
-
   golangci:
     name: golangci-lint
     runs-on: ubuntu-latest
