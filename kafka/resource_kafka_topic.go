@@ -20,7 +20,7 @@ func kafkaTopicResource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		CustomizeDiff: customPartitionDiff,
+		CustomizeDiff: customDiff,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
@@ -37,7 +37,7 @@ func kafkaTopicResource() *schema.Resource {
 			"replication_factor": {
 				Type:         schema.TypeInt,
 				Required:     true,
-				ForceNew:     true,
+				ForceNew:     false,
 				Description:  "Number of replicas.",
 				ValidateFunc: positiveValue,
 			},
@@ -61,18 +61,62 @@ func topicCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.FromErr(err)
 	}
 
+	stateConf := &resource.StateChangeConf{
+		Pending:      []string{"Pending"},
+		Target:       []string{"Created"},
+		Refresh:      topicCreateFunc(c, t),
+		Timeout:      time.Duration(c.Config.Timeout) * time.Second,
+		Delay:        1 * time.Second,
+		PollInterval: 2 * time.Second,
+	}
+
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return diag.FromErr(fmt.Errorf("error waiting for topic (%s) to be created: %s", t.Name, err))
+	}
+
 	d.SetId(t.Name)
 	return nil
+}
+
+func topicCreateFunc(client *LazyClient, t Topic) resource.StateRefreshFunc {
+	return func() (result interface{}, s string, err error) {
+		topic, err := client.ReadTopic(t.Name)
+		switch e := err.(type) {
+		case TopicMissingError:
+			return topic, "Pending", nil
+		case nil:
+			return topic, "Created", nil
+		default:
+			return topic, "Error", e
+		}
+	}
 }
 
 func topicUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*LazyClient)
 	t := metaToTopic(d, meta)
 
-	err := c.UpdateTopic(t)
-	if err != nil {
+	if err := c.UpdateTopic(t); err != nil {
 		return diag.FromErr(err)
 	}
+
+	// update replica count of existing partitions before adding new ones
+	if d.HasChange("replication_factor") {
+		oi, ni := d.GetChange("replication_factor")
+		oldRF := oi.(int)
+		newRF := ni.(int)
+		log.Printf("[INFO] Updating replication_factor from %d to %d", oldRF, newRF)
+		t.ReplicationFactor = int16(newRF)
+
+		if err := c.AlterReplicationFactor(t); err != nil {
+			return diag.FromErr(err)
+		}
+
+		if err := waitForRFUpdate(ctx, c, d.Id()); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	if d.HasChange("partitions") {
 		// update should only be called when we're increasing partitions
 		oi, ni := d.GetChange("partitions")
@@ -81,29 +125,66 @@ func topicUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("[INFO] Updating partitions from %d to %d", oldPartitions, newPartitions)
 		t.Partitions = int32(newPartitions)
 
-		err = c.AddPartitions(t)
-		if err != nil {
+		if err := c.AddPartitions(t); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	timeout := time.Duration(c.Config.Timeout) * time.Second
+	if err := waitForTopicRefresh(ctx, c, d.Id(), t); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
+}
+
+func waitForRFUpdate(ctx context.Context, client *LazyClient, topic string) error {
+	refresh := func() (interface{}, string, error) {
+		isRFUpdating, err := client.IsReplicationFactorUpdating(topic)
+		if err != nil {
+			return nil, "Error", err
+		} else if isRFUpdating {
+			return nil, "Updating", nil
+		} else {
+			return "not-nil", "Ready", nil
+		}
+	}
+
+	timeout := time.Duration(client.Config.Timeout) * time.Second
 	stateConf := &resource.StateChangeConf{
 		Pending:      []string{"Updating"},
 		Target:       []string{"Ready"},
-		Refresh:      topicRefreshFunc(c, d.Id(), t),
+		Refresh:      refresh,
 		Timeout:      timeout,
 		Delay:        1 * time.Second,
 		PollInterval: 1 * time.Second,
 		MinTimeout:   2 * time.Second,
 	}
 
-	_, err = stateConf.WaitForStateContext(ctx)
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return fmt.Errorf(
+			"Error waiting for topic (%s) replication_factor to update: %s",
+			topic, err)
+	}
 
-	if err != nil {
-		return diag.FromErr(fmt.Errorf(
+	return nil
+}
+
+func waitForTopicRefresh(ctx context.Context, client *LazyClient, topic string, expected Topic) error {
+	timeout := time.Duration(client.Config.Timeout) * time.Second
+	stateConf := &resource.StateChangeConf{
+		Pending:      []string{"Updating"},
+		Target:       []string{"Ready"},
+		Refresh:      topicRefreshFunc(client, topic, expected),
+		Timeout:      timeout,
+		Delay:        1 * time.Second,
+		PollInterval: 1 * time.Second,
+		MinTimeout:   2 * time.Second,
+	}
+
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return fmt.Errorf(
 			"Error waiting for topic (%s) to become ready: %s",
-			d.Id(), err))
+			topic, err)
 	}
 
 	return nil
@@ -197,11 +278,14 @@ func topicRead(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	if errSet.err != nil {
 		return diag.FromErr(errSet.err)
 	}
+
 	return nil
 }
 
-func customPartitionDiff(ctx context.Context, diff *schema.ResourceDiff, v interface{}) (err error) {
+func customDiff(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
 	log.Printf("[INFO] Checking the diff!")
+	client := v.(*LazyClient)
+
 	if diff.HasChange("partitions") {
 		log.Printf("[INFO] Partitions have changed!")
 		o, n := diff.GetChange("partitions")
@@ -210,11 +294,27 @@ func customPartitionDiff(ctx context.Context, diff *schema.ResourceDiff, v inter
 		log.Printf("[INFO] Partitions is changing from %d to %d", oi, ni)
 		if ni < oi {
 			log.Printf("Partitions decreased from %d to %d. Forcing new resource", oi, ni)
-			err = diff.ForceNew("partitions")
+			if err := diff.ForceNew("partitions"); err != nil {
+				return err
+			}
+		}
+	}
+
+	if diff.HasChange("replication_factor") {
+		canAlterRF, err := client.CanAlterReplicationFactor()
+		if err != nil {
+			return err
 		}
 
+		if !canAlterRF {
+			log.Println("[INFO] Need kafka >= 2.4.0 to update replication_factor in-place")
+			if err := diff.ForceNew("replication_factor"); err != nil {
+				return err
+			}
+		}
 	}
-	return err
+
+	return nil
 }
 
 func positiveValue(val interface{}, key string) (warns []string, errs []error) {

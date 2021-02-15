@@ -20,6 +20,7 @@ func TestAcc_ACLCreateAndUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	aclResourceName := fmt.Sprintf("syslog-%s", u)
+	bs := testBootstrapServers[0]
 
 	r.ParallelTest(t, r.TestCase{
 		ProviderFactories: map[string]func() (*schema.Provider, error){
@@ -28,39 +29,45 @@ func TestAcc_ACLCreateAndUpdate(t *testing.T) {
 			},
 		},
 		PreCheck:     func() { testAccPreCheck(t) },
-		CheckDestroy: testAccCheckAclDestroy,
+		CheckDestroy: func(s *terraform.State) error { return testAccCheckAclDestroy(aclResourceName) },
 		Steps: []r.TestStep{
 			{
-				Config: cfg(t, fmt.Sprintf(testResourceACL_initialConfig, aclResourceName)),
+				Config: cfg(t, bs, fmt.Sprintf(testResourceACL_initialConfig, aclResourceName)),
 				Check:  testResourceACL_initialCheck,
 			},
 			{
-				Config: cfg(t, fmt.Sprintf(testResourceACL_updateConfig, aclResourceName)),
+				Config: cfg(t, bs, fmt.Sprintf(testResourceACL_updateConfig, aclResourceName)),
 				Check:  testResourceACL_updateCheck,
 			},
 			{
 				ResourceName:      "kafka_acl.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				Config:            cfg(t, bs, fmt.Sprintf(testResourceACL_updateConfig, aclResourceName)),
 			},
 		},
 	})
 }
 
-func testAccCheckAclDestroy(s *terraform.State) error {
+func testAccCheckAclDestroy(name string) error {
 	client := testProvider.Meta().(*LazyClient)
 	acls, err := client.ListACLs()
 	if err != nil {
 		return err
 	}
 
-	if len(acls) > 1 {
-		return fmt.Errorf("There should be one ACL, got [%d]: %v %s",
-			len(acls),
-			acls,
-			err)
-	}
+	log.Printf("[INFO] Searching for the ACL with resource_name %s", name)
 
+	aclCount := 0
+	for _, searchACL := range acls {
+		if searchACL.ResourceName == name {
+			log.Printf("[INFO] Found acl with resource_name %s : %v", name, searchACL)
+			aclCount++
+		}
+	}
+	if aclCount != 0 {
+		return fmt.Errorf("Expected 0 acls for ACL %s, got %d", name, aclCount)
+	}
 	return nil
 }
 
@@ -82,7 +89,7 @@ func testResourceACL_initialCheck(s *terraform.State) error {
 	}
 
 	if len(acls) < 1 {
-		return fmt.Errorf("There should be one acl %v %s", acls, err)
+		return fmt.Errorf("There should be one acl, got %d, %v %s", len(acls), acls, err)
 	}
 
 	name := instanceState.Attributes["resource_name"]
@@ -195,7 +202,7 @@ resource "kafka_acl" "test" {
 `
 
 //lintignore:AT004
-func cfg(t *testing.T, extraCfg string) string {
+func cfg(t *testing.T, bs string, extraCfg string) string {
 	ca, err := ioutil.ReadFile("../secrets/ca.crt")
 	if err != nil {
 		t.Fatal(err)
@@ -211,7 +218,7 @@ func cfg(t *testing.T, extraCfg string) string {
 
 	return fmt.Sprintf(`
 provider "kafka" {
-	bootstrap_servers = ["localhost:9092"]
+	bootstrap_servers = ["%s"]
 	ca_cert = <<CA
 %s
 CA
@@ -226,5 +233,5 @@ KEY
 
 %s
 
-`, ca, cert, key, extraCfg)
+`, bs, ca, cert, key, extraCfg)
 }

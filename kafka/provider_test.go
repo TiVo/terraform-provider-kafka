@@ -13,6 +13,7 @@ import (
 )
 
 var testProvider *schema.Provider
+var testBootstrapServers []string = bootstrapServersFromEnv()
 
 func TestProvider(t *testing.T) {
 	if err := Provider().InternalValidate(); err != nil {
@@ -76,4 +77,35 @@ func accProvider() map[string]*schema.Provider {
 	return map[string]*schema.Provider{
 		"kafka": datProvider(),
 	}
+}
+
+func bootstrapServersFromEnv() []string {
+	fromEnv := strings.Split(os.Getenv("KAFKA_BOOTSTRAP_SERVER"), ",")
+	fromEnv = nonEmptyAndTrimmed(fromEnv)
+
+	if len(fromEnv) == 0 {
+		fromEnv = []string{"localhost:9092"}
+	}
+
+	bootstrapServers := make([]string, 0)
+	for _, bs := range fromEnv {
+		if bs != "" {
+			bootstrapServers = append(bootstrapServers, bs)
+		}
+	}
+
+	return bootstrapServers
+}
+
+func nonEmptyAndTrimmed(bootstrapServers []string) []string {
+	wellFormed := make([]string, 0)
+
+	for _, bs := range bootstrapServers {
+		trimmed := strings.TrimSpace(bs)
+		if trimmed != "" {
+			wellFormed = append(wellFormed, trimmed)
+		}
+	}
+
+	return wellFormed
 }
