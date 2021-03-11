@@ -13,7 +13,12 @@ pipeline {
 
     stages {
         stage('Build Application') {
-            agent { dockerfile { label 'docker' } }
+            agent {
+                dockerfile {
+                    filename 'Dockerfile.tivo-build'
+                    label 'docker'
+                }
+            }
             steps {
                 sh "make build"
                 sh "./build-multi-arch.sh ${providerID}_${providerVersion} ."
